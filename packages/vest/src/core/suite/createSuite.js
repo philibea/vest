@@ -1,4 +1,5 @@
 import asArray from 'asArray';
+import callEach from 'callEach';
 import context from 'ctx';
 import genId from 'genId';
 import isFunction from 'isFunction';
@@ -33,6 +34,8 @@ const createSuite = withArgs(args => {
     useTestObjects,
   });
 
+  const suiteSubscribers = [];
+
   /*
     context.bind returns our `validate` function
     We then wrap it with defineProperties to add
@@ -53,6 +56,7 @@ const createSuite = withArgs(args => {
     // Merge all the skipped tests with their previous results
     mergeExcludedTests(previousTestObjects);
 
+    callEach(suiteSubscribers);
     return produce();
   });
   suite.get = context.bind({ stateRef }, produce, /*isDraft:*/ true);
@@ -67,6 +71,14 @@ const createSuite = withArgs(args => {
       }
     });
   });
+  suite.subscribe = subscriber => {
+    if (!isFunction(subscriber)) {
+      return;
+    }
+
+    suiteSubscribers.push(() => subscriber(suite.get()));
+    return subscriber(suite.get());
+  };
   return suite;
 });
 
