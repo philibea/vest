@@ -76,7 +76,7 @@ const createSuite = withArgs(args => {
       return;
     }
 
-    suiteSubscribers.push(() => subscriber(suite.get()));
+    suiteSubscribers.push(() => subscriber(produce));
     return subscriber(suite.get());
   };
   return suite;
