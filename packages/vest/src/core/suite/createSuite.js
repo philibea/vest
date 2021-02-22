@@ -26,15 +26,19 @@ const createSuite = withArgs(args => {
       'Suite initialization error. Expected `tests` to be a function.'
     );
   }
-
-  const stateRef = state.createRef({
-    usePending,
-    useSuiteId: [useSuiteId, [genId(), name]],
-    useTestCallbacks,
-    useTestObjects,
-  });
-
   const suiteSubscribers = [];
+
+  const stateRef = state.createRef(
+    {
+      usePending,
+      useSuiteId: [useSuiteId, [genId(), name]],
+      useTestCallbacks,
+      useTestObjects,
+    },
+    (state, key, value) => {
+      suiteSubscribers.forEach(sub => sub(state, key, value));
+    }
+  );
 
   /*
     context.bind returns our `validate` function
@@ -56,7 +60,6 @@ const createSuite = withArgs(args => {
     // Merge all the skipped tests with their previous results
     mergeExcludedTests(previousTestObjects);
 
-    callEach(suiteSubscribers);
     return produce();
   });
   suite.get = context.bind({ stateRef }, produce, /*isDraft:*/ true);
@@ -76,8 +79,8 @@ const createSuite = withArgs(args => {
       return;
     }
 
-    suiteSubscribers.push(() => subscriber(produce));
-    return subscriber(suite.get());
+    suiteSubscribers.push(subscriber);
+    return subscriber(stateRef.current());
   };
   return suite;
 });
